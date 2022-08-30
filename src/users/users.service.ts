@@ -15,8 +15,8 @@ export class UsersService {
         return user;
     }
 
-    async findAll(): Promise<User[]> {
-        const users = this.userModel.find().sort({login: 1}).exec();
-        return users;
+    async getUserByEmail(email:string): Promise<User> {
+        const user = await this.userModel.findOne({email}).exec();
+        return user;
     }
 }

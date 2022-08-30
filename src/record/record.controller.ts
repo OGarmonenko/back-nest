@@ -1,12 +1,16 @@
-import {Body, Controller, Delete, Get, HttpStatus, Param, Post, Put} from '@nestjs/common';
+import {Body, Controller, Delete, Get, HttpStatus, Param, Post, Put, UseGuards} from '@nestjs/common';
 import {CreateRecordDto} from "./dto/create-record.dto";
 import {RecordService} from "./record.service";
 import {Record} from "./schemas/record.schema";
 import {ApiOperation, ApiResponse, ApiTags} from "@nestjs/swagger";
-import {User} from "../users/schemas/user.schema";
+import {Roles} from "../auth/decorators/roles.decorator";
+import {rolesTypes} from "../users/enums/roles_types.enum";
+import {RolesGuard} from "../auth/guards/roles.guard";
+import {JwtAuthGuard} from "../auth/guards/jwt-auth.guard";
 
 @ApiTags('Records')
-@Controller('api/record')
+@UseGuards(JwtAuthGuard)
+@Controller('api/record/')
 export class RecordController {
     constructor(private readonly recordService: RecordService) {};
 
@@ -20,29 +24,34 @@ export class RecordController {
     @ApiOperation({summary: 'Get one record'})
     @ApiResponse({status: HttpStatus.OK, type: Record})
     @Get(':id')
-    findOne(@Param('id') id: string): Promise<Record> {
+    findOne(@Param('id') id: number): Promise<Record> {
         return this.recordService.findOne(id);
     }
 
     @ApiOperation({summary: 'Create record'})
     @ApiResponse({status: HttpStatus.CREATED, type: Record})
+    @Roles(rolesTypes.Admin, rolesTypes.Guest)
+    @UseGuards(RolesGuard)
     @Post()
-    create(@Body() CreateRecordDto: CreateRecordDto): Promise<Record> {
-        return this.recordService.create(CreateRecordDto);
+    create(@Body() dto: CreateRecordDto): Promise<Record> {
+        return this.recordService.create(dto);
     }
 
-    /*@Put(':id')
-    update(@Param('id') id: string, @Body() updateCatDto: UpdateCatDto) {
-        return `update`;
-    }*/
+    @ApiOperation({summary: 'Update information from record'})
+    @ApiResponse({status: HttpStatus.OK})
+    @Roles(rolesTypes.Admin)
+    @UseGuards(RolesGuard)
+    @Put(':id')
+    update(@Param('id') id: number, @Body() dto: CreateRecordDto) {
+        return this.recordService.update(id, dto.userInfo);
+    }
 
     @ApiOperation({summary: 'Delete record'})
     @ApiResponse({status: HttpStatus.OK, type: Record})
+    @Roles(rolesTypes.Admin)
+    @UseGuards(RolesGuard)
     @Delete(':id')
     remove(@Param('id') id: string) {
-
-        return this.recordService.remove(id);
+      return this.recordService.remove(id);
     }
-
-
 }
